@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name='curl-rainbow',
+    name='curl_rainbow',
     packages=find_packages(),
     version='0.1',
     # license='MIT',
