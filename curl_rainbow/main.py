@@ -8,21 +8,24 @@
 # The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 # ==============================================================================
 from __future__ import division
-import argparse
-import bz2
-from datetime import datetime
-import os
-import pickle
 
+import os
+import bz2
+import pickle
+import argparse
+
+from env import Env
+from agent import Agent
+from memory import ReplayMemory
+from datetime import datetime
+
+import torch
 import atari_py
 import numpy as np
-import torch
+
 from tqdm import trange
 
-from agent import Agent
-from env import Env
-from memory import ReplayMemory
-from test import test
+from .test import test
 
 seed = np.random.randint(12345)
 # Note that hyperparameters may originally be reported in ATARI game frames instead of agent steps
