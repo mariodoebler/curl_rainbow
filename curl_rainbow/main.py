@@ -25,7 +25,7 @@ import numpy as np
 
 from tqdm import trange
 
-from test import test
+from curl_rainbow.test import test
 import wandb
 
 seed = np.random.randint(12345)
