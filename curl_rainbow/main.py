@@ -68,6 +68,9 @@ parser.add_argument('--enable-cudnn', action='store_true', help='Enable cuDNN (f
 parser.add_argument('--checkpoint-interval', default=0, help='How often to checkpoint the model, defaults to 0 (never checkpoint)')
 parser.add_argument('--memory', help='Path to save/load the memory from')
 parser.add_argument('--disable-bzip-memory', action='store_true', help='Don\'t zip the memory file. Not recommended (zipping is a bit slower and much, much smaller)')
+parser.add_argument('--wandb-off', action='store_true')
+parser.add_argument('--name-logging', type=str, default="trash")
+parser.add_argument('--project', type=str, default="trash")
 
 # Setup
 args = parser.parse_args()
@@ -89,6 +92,11 @@ if torch.cuda.is_available() and not args.disable_cuda:
   torch.backends.cudnn.enabled = args.enable_cudnn
 else:
   args.device = torch.device('cpu')
+
+
+if not args.wandb_off:
+  tags = [args.device.type, args.game, "T_max: " + str(args.T_max), "curl, fs4"]
+  wandb.init(project=args.project, name=args.name_logging, tags=tags)
 
 
 # Simple ISO 8601 timestamped logger
@@ -121,6 +129,11 @@ action_space = env.action_space()
 
 # Agent
 dqn = Agent(args, env)
+if wandb:
+  wandb.watch(dqn.momentum_net)
+  wandb.watch(dqn.target_net)
+  wandb.watch(dqn.online_net)
+
 
 # If a model is provided, and evaluate is fale, presumably we want to resume, so try to load memory
 if args.model is not None and not args.evaluate:
@@ -154,6 +167,10 @@ if args.evaluate:
   dqn.eval()  # Set DQN (online network) to evaluation mode
   avg_reward, avg_Q = test(args, 0, dqn, val_mem, metrics, results_dir, evaluate=True)  # Test
   print('Avg. reward: ' + str(avg_reward) + ' | Avg. Q: ' + str(avg_Q))
+  if wandb:
+    wandb.log({"avg reward": avg_reward})
+    wandb.log({"avg Q": avg_Q})
+
 else:
   # Training loop
   dqn.train()
@@ -186,6 +203,10 @@ else:
         dqn.eval()  # Set DQN (online network) to evaluation mode
         avg_reward, avg_Q = test(args, T, dqn, val_mem, metrics, results_dir)  # Test
         log('T = ' + str(T) + ' / ' + str(args.T_max) + ' | Avg. reward: ' + str(avg_reward) + ' | Avg. Q: ' + str(avg_Q))
+        if wandb:
+          wandb.log({"T": T})
+          wandb.log({"avg reward": avg_reward})
+          wandb.log({"avg Q": avg_Q})
         dqn.train()  # Set DQN (online network) back to training mode
 
         # If memory path provided, save it
