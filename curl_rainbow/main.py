@@ -25,7 +25,8 @@ import numpy as np
 
 from tqdm import trange
 
-from .test import test
+from test import test
+import wandb
 
 seed = np.random.randint(12345)
 # Note that hyperparameters may originally be reported in ATARI game frames instead of agent steps
@@ -143,8 +144,9 @@ while T < args.evaluation_size:
   if done:
     state, done = env.reset(), False
 
+  # next_state: shape [4, 84, 84] --> framestacking with 4
   next_state, _, done = env.step(np.random.randint(0, action_space))
-  val_mem.append(state, None, None, done)
+  val_mem.append(state, None, None, done) # saved in range [0, 255]
   state = next_state
   T += 1
 
@@ -164,9 +166,11 @@ else:
       dqn.reset_noise()  # Draw a new set of noisy weights
 
     action = dqn.act(state)  # Choose an action greedily (with noisy weights)
+    # range of state/obs: [0, 1] !!!!!!!!!!!!!!!! shape: [4, 84, 84]
     next_state, reward, done = env.step(action)  # Step
     if args.reward_clip > 0:
       reward = max(min(reward, args.reward_clip), -args.reward_clip)  # Clip rewards
+    # states appended in range [0, 255] !!!!
     mem.append(state, action, reward, done)  # Append transition to memory
 
     # Train and test

@@ -79,24 +79,25 @@ class Agent():
 
   def learn(self, mem):
     # Sample transitions
+    # states range [0, 1]! [32, 4, 84, 84]; actions [bs=32]
     idxs, states, actions, returns, next_states, nonterminals, weights = mem.sample(self.batch_size)
     aug_states_1 = aug(states).to(device=self.args.device)
     aug_states_2 = aug(states).to(device=self.args.device)
     # Calculate current state probabilities (online network noise already sampled)
-    log_ps, _ = self.online_net(states, log=True)  # Log probabilities log p(s_t, ·; θonline)
-    _, z_anch = self.online_net(aug_states_1, log=True)
-    _, z_target = self.momentum_net(aug_states_2, log=True)
-    z_proj = torch.matmul(self.online_net.W, z_target.T)
-    logits = torch.matmul(z_anch, z_proj)
+    log_ps, _ = self.online_net(states, log=True)  # Log probabilities log p(s_t, ·; θonline); [bs, 6, 51]
+    _, z_anch = self.online_net(aug_states_1, log=True)  # shape [bs, 128]
+    _, z_target = self.momentum_net(aug_states_2, log=True) # shape [bs, 128]
+    z_proj = torch.matmul(self.online_net.W, z_target.T) # shape [128, bs]
+    logits = torch.matmul(z_anch, z_proj) # shape [bs, bs]
     logits = (logits - torch.max(logits, 1)[0][:, None])
     logits = logits * 0.1
-    labels = torch.arange(logits.shape[0]).long().to(device=self.args.device)
+    labels = torch.arange(logits.shape[0]).long().to(device=self.args.device) # shape [bs]
     moco_loss = (nn.CrossEntropyLoss()(logits, labels)).to(device=self.args.device)
 
-    log_ps_a = log_ps[range(self.batch_size), actions]  # log p(s_t, a_t; θonline)
+    log_ps_a = log_ps[range(self.batch_size), actions]  # log p(s_t, a_t; θonline); [bs, 51]
 
     with torch.no_grad():
-      # Calculate nth next state probabilities
+      # Calculate nth NEXT state probabilities
       pns, _ = self.online_net(next_states)  # Probabilities p(s_t+n, ·; θonline)
       dns = self.support.expand_as(pns) * pns  # Distribution d_t+n = (z, p(s_t+n, ·; θonline))
       argmax_indices_ns = dns.sum(2).argmax(1)  # Perform argmax action selection using online network: argmax_a[(z, p(s_t+n, a; θonline))]
