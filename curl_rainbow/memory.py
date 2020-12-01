@@ -145,6 +145,8 @@ class ReplayMemory():
 
   def update_priorities(self, idxs, priorities):
     priorities = np.power(priorities, self.priority_exponent)
+    if not hasattr(priorities, '__iter__'):
+      priorities = (priorities, )
     [self.transitions.update(idx, priority) for idx, priority in zip(idxs, priorities)]
 
   # Set up internal state for iterator
