@@ -14,7 +14,7 @@ from plotly.graph_objs import Scatter
 from plotly.graph_objs.scatter import Line
 import torch
 
-from env import Env
+from curl_rainbow.env import Env
 
 
 # Test DQN

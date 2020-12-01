@@ -14,9 +14,6 @@ import bz2
 import pickle
 import argparse
 
-from env import Env
-from agent import Agent
-from memory import ReplayMemory
 from datetime import datetime
 
 import torch
@@ -26,7 +23,10 @@ import numpy as np
 
 from tqdm import trange
 
+from curl_rainbow.env import Env
 from curl_rainbow.test import test
+from curl_rainbow.agent import Agent
+from curl_rainbow.memory import ReplayMemory
 
 seed = np.random.randint(12345)
 # Note that hyperparameters may originally be reported in ATARI game frames instead of agent steps

@@ -8,14 +8,19 @@
 # The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 # ==============================================================================
 from __future__ import division
+
 import os
+
 import numpy as np
+
+import kornia.augmentation as aug
 import torch
+import torch.nn as nn
+
+from curl_rainbow.model import DQN
+
 from torch import optim
 from torch.nn.utils import clip_grad_norm_
-import kornia.augmentation as aug
-import torch.nn as nn
-from model import DQN
 
 random_shift = nn.Sequential(aug.RandomCrop((80, 80)), nn.ReplicationPad2d(4), aug.RandomCrop((84, 84)))
 aug = random_shift
