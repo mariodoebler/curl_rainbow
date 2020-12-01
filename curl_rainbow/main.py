@@ -101,6 +101,8 @@ else:
   results_dir = os.path.join('results', args.id)
   if not os.path.exists(results_dir):
     os.makedirs(results_dir)
+  
+  wandb = None
 
 # Simple ISO 8601 timestamped logger
 def log(s):
