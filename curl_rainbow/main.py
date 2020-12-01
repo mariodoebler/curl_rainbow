@@ -20,13 +20,13 @@ from memory import ReplayMemory
 from datetime import datetime
 
 import torch
+import wandb
 import atari_py
 import numpy as np
 
 from tqdm import trange
 
 from curl_rainbow.test import test
-import wandb
 
 seed = np.random.randint(12345)
 # Note that hyperparameters may originally be reported in ATARI game frames instead of agent steps
