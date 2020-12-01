@@ -108,15 +108,17 @@ else:
 def log(s):
   print('[' + str(datetime.now().strftime('%Y-%m-%dT%H:%M:%S')) + '] ' + s)
 
-def logOnline(reward, Q, step, mode=None):
+def logOnline(wandb, reward, Q, reward_best, step, mode=None):
   if mode:
     reward_str = "_".join(("reward_avg", mode))
+    reward_best_str = "_".join(("reward_max", mode))
     Q_str = "_".join(("Q_avg", mode))
   else:
     reward_str = "reward_avg"
+    reward_best_str = "reward_max"
     Q_str = "Q_avg"
       
-  wandb.log({reward_str: reward, Q_str: Q}, step=step)
+  wandb.log({reward_str: reward, Q_str: Q, reward_best_str: reward_best}, step=step)
   
 
 def load_memory(memory_path, disable_bzip):
@@ -183,7 +185,7 @@ if args.evaluate:
   avg_reward, avg_Q = test(args, 0, dqn, val_mem, metrics, results_dir, evaluate=True)  # Test
   print('Avg. reward: ' + str(avg_reward) + ' | Avg. Q: ' + str(avg_Q))
   if wandb:
-    logOnline(reward, Q, step=0, mode="eval")
+    logOnline(wandb, reward, Q, step=0, mode="eval")
 
 else:
   # Training loop
@@ -215,10 +217,11 @@ else:
 
       if T % args.evaluation_interval == 0:
         dqn.eval()  # Set DQN (online network) to evaluation mode
-        avg_reward, avg_Q = test(args, T, dqn, val_mem, metrics, results_dir)  # Test
-        log('T = ' + str(T) + ' / ' + str(args.T_max) + ' | Avg. reward: ' + str(avg_reward) + ' | Avg. Q: ' + str(avg_Q))
+        avg_reward, avg_Q, best_reward = test(args, T, dqn, val_mem, metrics, results_dir, wandb=wandb)  # Test
+        log('T = ' + str(T) + ' / ' + str(args.T_max) + ' | Avg. reward: ' + str(avg_reward) + ' | Avg. Q: ' + str(avg_Q) + ' | Max reward: ' + str(best_reward))
         if wandb:
-          logOnline(avg_reward, avg_Q, step=T)
+          logOnline(wandb, avg_reward, avg_Q, best_reward, step=T)
+          
         dqn.train()  # Set DQN (online network) back to training mode
 
         # If memory path provided, save it
@@ -231,7 +234,7 @@ else:
 
       # Checkpoint the network
       if (args.checkpoint_interval != 0) and (T % args.checkpoint_interval == 0):
-        dqn.save(results_dir, args.id + '.pth')
+        dqn.save(results_dir, args.id + '.pth', wandb)
 
     state = next_state
 

@@ -151,8 +151,12 @@ class Agent():
       param_k.data.copy_(momentum * param_k.data + (1.- momentum) * param_q.data) # update
 
   # Save model parameters on current device (don't move model between devices)
-  def save(self, path, name='model.pth'):
-    torch.save(self.online_net.state_dict(), os.path.join(path, name))
+  def save(self, path, name='model.pth', wandb=None):
+    state_dict = self.online_net.state_dict()
+    filename = os.path.join(path, name)
+    torch.save(state_dict, filename)
+    if wandb:
+      wandb.save(filename)
 
   # Evaluates Q-value based on single state (no batch)
   def evaluate_q(self, state):

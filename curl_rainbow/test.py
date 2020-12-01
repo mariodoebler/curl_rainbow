@@ -18,7 +18,7 @@ from curl_rainbow.env import Env
 
 
 # Test DQN
-def test(args, T, dqn, val_mem, metrics, results_dir, evaluate=False):
+def test(args, T, dqn, val_mem, metrics, results_dir, evaluate=False, wandb=None):
   env = Env(args)
   env.eval()
   metrics['steps'].append(T)
@@ -51,7 +51,7 @@ def test(args, T, dqn, val_mem, metrics, results_dir, evaluate=False):
     # Save model parameters if improved
     if avg_reward > metrics['best_avg_reward']:
       metrics['best_avg_reward'] = avg_reward
-      dqn.save(results_dir)
+      dqn.save(results_dir, name=args.id + '.pth', wandb=wandb)
 
     # Append to results and save metrics
     metrics['rewards'].append(T_rewards)
@@ -63,7 +63,7 @@ def test(args, T, dqn, val_mem, metrics, results_dir, evaluate=False):
     _plot_line(metrics['steps'], metrics['Qs'], 'Q', path=results_dir)
 
   # Return average reward and Q-value
-  return avg_reward, avg_Q
+  return avg_reward, avg_Q, metrics['best_avg_reward']
 
 
 # Plots min, max and mean + standard deviation bars of a population over time
