@@ -80,9 +80,6 @@ args.id = xid
 print(' ' * 26 + 'Options')
 for k, v in vars(args).items():
   print(' ' * 26 + k + ': ' + str(v))
-results_dir = os.path.join('results', args.id)
-if not os.path.exists(results_dir):
-  os.makedirs(results_dir)
 metrics = {'steps': [], 'rewards': [], 'Qs': [], 'best_avg_reward': -float('inf')}
 np.random.seed(args.seed)
 torch.manual_seed(np.random.randint(1, 10000))
@@ -99,11 +96,26 @@ if not args.wandb_off:
   wandb.init(project=args.project, name=args.name_logging, tags=tags)
 
   wandb.config.update(vars(args))
+  results_dir = wandb.run.dir
+else:
+  results_dir = os.path.join('results', args.id)
+  if not os.path.exists(results_dir):
+    os.makedirs(results_dir)
 
 # Simple ISO 8601 timestamped logger
 def log(s):
   print('[' + str(datetime.now().strftime('%Y-%m-%dT%H:%M:%S')) + '] ' + s)
 
+def logOnline(reward, Q, step, mode=None):
+  if mode:
+    reward_str = "_".join(("reward_avg", mode))
+    Q_str = "_".join(("Q_avg", mode))
+  else:
+    reward_str = "reward_avg"
+    Q_str = "Q_avg"
+      
+  wandb.log({reward_str: reward, Q_str: Q}, step=step)
+  
 
 def load_memory(memory_path, disable_bzip):
   if disable_bzip:
@@ -169,8 +181,7 @@ if args.evaluate:
   avg_reward, avg_Q = test(args, 0, dqn, val_mem, metrics, results_dir, evaluate=True)  # Test
   print('Avg. reward: ' + str(avg_reward) + ' | Avg. Q: ' + str(avg_Q))
   if wandb:
-    wandb.log({"avg reward": avg_reward})
-    wandb.log({"avg Q": avg_Q})
+    logOnline(reward, Q, step=0, mode="eval")
 
 else:
   # Training loop
@@ -205,9 +216,7 @@ else:
         avg_reward, avg_Q = test(args, T, dqn, val_mem, metrics, results_dir)  # Test
         log('T = ' + str(T) + ' / ' + str(args.T_max) + ' | Avg. reward: ' + str(avg_reward) + ' | Avg. Q: ' + str(avg_Q))
         if wandb:
-          wandb.log({"T": T})
-          wandb.log({"avg reward": avg_reward})
-          wandb.log({"avg Q": avg_Q})
+          logOnline(avg_reward, avg_Q, step=T)
         dqn.train()  # Set DQN (online network) back to training mode
 
         # If memory path provided, save it
@@ -220,7 +229,7 @@ else:
 
       # Checkpoint the network
       if (args.checkpoint_interval != 0) and (T % args.checkpoint_interval == 0):
-        dqn.save(results_dir, 'checkpoint.pth')
+        dqn.save(results_dir, args.id + '.pth')
 
     state = next_state
 
