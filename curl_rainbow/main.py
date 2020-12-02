@@ -71,7 +71,7 @@ parser.add_argument('--disable-bzip-memory', action='store_true', help='Don\'t z
 parser.add_argument('--wandb-off', action='store_true')
 parser.add_argument('--name-logging', type=str, default="trash")
 parser.add_argument('--project', type=str, default="trash")
-
+parser.add_argument('--squared-input', action="store_true")
 # Setup
 args = parser.parse_args()
 xid = 'curl-' + args.game + '-' + str(seed)
@@ -89,7 +89,15 @@ if torch.cuda.is_available() and not args.disable_cuda:
   torch.backends.cudnn.enabled = args.enable_cudnn
 else:
   args.device = torch.device('cpu')
-
+      
+def getImageDimensions(squared_input=False):
+    # default: rectangles (210, 160)
+    if squared_input:
+        return 84, 84  # default for curl
+    else:
+        return 210, 160
+        
+args.dim_height, args.dim_width = getImageDimensions(args.squared_input)
 
 if not args.wandb_off:
   tags = [args.device.type, args.game, "T_max: " + str(args.T_max), "curl, fs4"]

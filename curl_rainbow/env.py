@@ -32,13 +32,16 @@ class Env():
     self.state_buffer = deque([], maxlen=args.history_length)
     self.training = True  # Consistent with model training mode
 
+    self.dim_height, self.dim_width = args.dim_height, args.dim_width
+
   def _get_state(self):
-    state = cv2.resize(self.ale.getScreenGrayscale(), (84, 84), interpolation=cv2.INTER_LINEAR)
+    # CV2-function: dimensions are WIDTH, HEIGHT!
+    state = cv2.resize(self.ale.getScreenGrayscale(), (self.dim_width, self.dim_height), interpolation=cv2.INTER_LINEAR)
     return torch.tensor(state, dtype=torch.float32, device=self.device).div_(255)
 
   def _reset_buffer(self):
     for _ in range(self.window):
-      self.state_buffer.append(torch.zeros(84, 84, device=self.device))
+      self.state_buffer.append(torch.zeros(self.dim_height, self.dim_width, device=self.device))
 
   def reset(self):
     if self.life_termination:
@@ -61,7 +64,7 @@ class Env():
 
   def step(self, action):
     # Repeat action 4 times, max pool over last 2 frames
-    frame_buffer = torch.zeros(2, 84, 84, device=self.device)
+    frame_buffer = torch.zeros(2, self.dim_height, self.dim_width, device=self.device)
     reward, done = 0, False
     for t in range(4):
       reward += self.ale.act(self.actions.get(action))
@@ -101,3 +104,5 @@ class Env():
 
   def close(self):
     cv2.destroyAllWindows()
+    
+
