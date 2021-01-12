@@ -33,10 +33,13 @@ class Env():
     self.training = True  # Consistent with model training mode
 
     self.dim_height, self.dim_width = args.dim_height, args.dim_width
+    self.overlay_pong_scores = "pong" in args.game
 
   def _get_state(self):
     # CV2-function: dimensions are WIDTH, HEIGHT!
     state = cv2.resize(self.ale.getScreenGrayscale(), (self.dim_width, self.dim_height), interpolation=cv2.INTER_LINEAR)
+    if self.overlay_pong_scores:
+      state[:30, :] = 235
     return torch.tensor(state, dtype=torch.float32, device=self.device).div_(255)
 
   def _reset_buffer(self):
